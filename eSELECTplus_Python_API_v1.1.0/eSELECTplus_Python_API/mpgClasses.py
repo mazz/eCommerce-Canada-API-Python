@@ -1,6 +1,7 @@
-import urllib2
 import xml.sax
 import socket
+import urllib.request
+import urllib.error
 
 class mpgHttpsPost:
         __url = {'protocol' : 'https', 'port' : '443', 'file' : 'gateway2/servlet/MpgRequest' }
@@ -14,24 +15,22 @@ class mpgHttpsPost:
                 self.__storeId = store_id
                 self.__apiToken = api_token
                 self.__url["host"] = host
-                self.__data = self.__toXml()
-        
+                self.__data = str.encode(self.__toXml())
         
         def postRequest (self):         
                 requestUrl = self.__url["protocol"] + "://" + self.__url["host"] + ":" + self.__url["port"] + "/" + self.__url["file"]
                 try:
                         #print ("Request URL is: [" + requestUrl + "]") 
                         #print ("Data to send : " + self.__data)
-                        requestObj = urllib2.Request(requestUrl, self.__data)
-                        socket.setdefaulttimeout(self.__timeout)
+                        requestObj = urllib.request.Request(requestUrl, self.__data)
                         requestObj.add_header("USER-AGENT", self.__agent)
-                        requestObj.add_header("CONTENT-TYPE:", "text/xml")
-                        responsePacket = urllib2.urlopen(requestObj)
+                        requestObj.add_header("CONTENT-TYPE", "text/xml")
+                        responsePacket = urllib.request.urlopen(requestObj, timeout=self.__timeout)
                         response = responsePacket.read()
 
                         #print ("******\n Got response of: " + response + "\n******")
 
-                except urllib2.URLError, e:                     
+                except urllib.error.URLError as e:                     
                         response = self.__GlobalError(e)
                         
                 self.__Response = mpgResponse(response)
@@ -240,8 +239,8 @@ class mpgTransaction:
         def toXml(self):
                 requestXml = "<" + self._Request + ">"
                 for index, tag in enumerate(self._order):
-                        value = self._tags[tag]                 
-                        if isinstance(value, basestring):
+                        value = self._tags[tag]
+                        if isinstance(value, str):
                                 requestXml = requestXml + "<" + tag + ">" + value + "</" + tag + ">"
                         elif isinstance(value, mpgTransaction):
                                 requestXml = requestXml + value.toXml()
